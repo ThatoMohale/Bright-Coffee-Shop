@@ -1,7 +1,7 @@
 -- I want to see my table in the coding to start exploring each column
 SELECT * 
 FROM workspace.default.bright_coffee_shop_data
-LIMIT 10;
+LIMIT 100;
 
 --------------------------------------------------------
 -- 1. Checking The Date Range (2023-01-01 to 2023-06-30)
@@ -69,8 +69,25 @@ FROM workspace.default.bright_coffee_shop_data;
 
 SELECT Transaction_id
        Transaction_date,
+       Transaction_time,
+       Store_id,
+       Store_location, 
+       Product_id
+       Unit_price,
+       Product_category,
+       Product_type,
+       Product_detail,
+
+ -- Adding Columns for better insights
        Dayname(transaction_date) AS Day_name,
        Monthname(transaction_date) AS Month_name,
+
+       CASE 
+            WHEN Day_name IN ('Sun' , 'Sat') THEN 'Weekend'
+            ELSE 'Weekday'
+       END AS Day_classification, 
+
+       
        Transaction_qty*unit_price AS Revenue
 FROM workspace.default.bright_coffee_shop_data;
 
@@ -79,13 +96,39 @@ FROM workspace.default.bright_coffee_shop_data;
 ----------------------------------------
 
 SELECT Transaction_date,
-       Dayname(transaction_date) AS Day_name,
-       Monthname(transaction_date) AS Month_name,
-       COUNT(DISTINCT transaction_id) AS Number_of_sales,
-       SUM(Transaction_qty*unit_price) AS Revenue
+       Dayname(Transaction_date) AS Day_name,
+       Monthname(Transaction_date) AS Month_name,
+       Date_format(Transaction_time, 'HH:mm:ss') AS  purchase_time,
+
+       CASE 
+            WHEN date_format(Transaction_time, 'HH:mm:ss') BETWEEN '00:00:00' AND '11:59:59' THEN '01. Morning'
+            WHEN date_format(Transaction_time, 'HH:mm:ss') BETWEEN '12:00:00' AND '16:59:59' THEN '02. Afternoon'
+            WHEN date_format(Transaction_time, 'HH:mm:ss') >= '17:00:00' THEN '03. Evening'
+            END AS time_buckets,
+
+
+-- Count ID's
+       COUNT(DISTINCT Transaction_id) AS Number_of_sales,
+       COUNT(DISTINCT Product_id) AS Number_of_products,
+       COUNT(DISTINCT Store_id) AS Number_of_stores,
+
+-- Calculating Revenue
+       SUM(Transaction_qty*unit_price) AS Revenue_per_day,
+
+--  Categorical Columns
+      store_location,
+      product_category,
+      product_detail
+
 FROM workspace.default.bright_coffee_shop_data
 GROUP BY Transaction_date,
          Day_name,
+         Month_name,
+         Store_location,
+         product_category,
+         Product_detail,
+         purchase_time,
+         time_buckets,
          Month_name;
 
 
