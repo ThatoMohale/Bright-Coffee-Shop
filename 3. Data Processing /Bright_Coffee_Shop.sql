@@ -79,8 +79,10 @@ SELECT Transaction_id
        Product_detail,
 
  -- Adding Columns for better insights
+       transaction_date AS purchase_date,
        Dayname(transaction_date) AS Day_name,
        Monthname(transaction_date) AS Month_name,
+       Dayofmonth(transaction_date) AS day_of_month,
 
        CASE 
             WHEN Day_name IN ('Sun' , 'Sat') THEN 'Weekend'
@@ -95,10 +97,15 @@ FROM workspace.default.bright_coffee_shop_data;
 -- Aggregate No. Of Transactions Per Day
 ----------------------------------------
 
-SELECT Transaction_date,
+SELECT Transaction_date AS purchase_date,
        Dayname(Transaction_date) AS Day_name,
        Monthname(Transaction_date) AS Month_name,
-       Date_format(Transaction_time, 'HH:mm:ss') AS  purchase_time,
+       Dayofmonth(transaction_date) AS day_of_month,
+
+       CASE 
+            WHEN Day_name IN ('Sun' , 'Sat') THEN 'Weekend'
+            ELSE 'Weekday'
+       END AS Day_classification,
 
        CASE 
             WHEN date_format(Transaction_time, 'HH:mm:ss') BETWEEN '00:00:00' AND '11:59:59' THEN '01. Morning'
@@ -115,7 +122,16 @@ SELECT Transaction_date,
 -- Calculating Revenue
        SUM(Transaction_qty*unit_price) AS Revenue_per_day,
 
---  Categorical Columns
+       CASE
+
+              WHEN revenue_per_day <=50 THEN '01. Low Spend'
+              WHEN revenue_per_day BETWEEN 51 AND 100 THEN '02. Mid Spend'
+              ELSE '03. High Spend'
+       END AS Spend_buckets,
+
+
+
+-- Filtering Categorical Columns
       store_location,
       product_category,
       product_detail
@@ -127,7 +143,6 @@ GROUP BY Transaction_date,
          Store_location,
          product_category,
          Product_detail,
-         purchase_time,
          time_buckets,
          Month_name;
 
